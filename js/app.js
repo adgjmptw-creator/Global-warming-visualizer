@@ -3,15 +3,17 @@
 
 import { geocode, fetchClimate, fallbackClimate, computeStats } from './climate.js';
 import { renderStripes, renderVerdict, renderTrendChart, renderHotDays } from './render.js';
+import { SUPPORTED, getLang, setLang, t, applyStatic, localizedCities } from './i18n.js';
 
 const $ = (sel) => document.querySelector(sel);
 
 const els = {
   body: document.body,
+  langSelect: $('#lang-select'),
   searchInput: $('#search-input'),
   suggestions: $('#search-suggestions'),
   locateBtn: $('#locate-btn'),
-  chips: document.querySelectorAll('.chip'),
+  chips: $('#chips'),
   loading: $('#loading'),
   error: $('#error'),
   errorRetry: $('#error-retry'),
@@ -63,7 +65,7 @@ document.addEventListener('click', (e) => {
 
 async function showSuggestions(q) {
   try {
-    const results = await geocode(q);
+    const results = await geocode(q, getLang());
     if (!results.length) {
       clearSuggestions();
       return;
@@ -100,7 +102,7 @@ async function handleEnter(q) {
   if (!q) return;
   clearSuggestions();
   try {
-    const results = await geocode(q);
+    const results = await geocode(q, getLang());
     if (results.length) {
       els.searchInput.value = results[0].label;
       loadLocation(results[0]);
@@ -118,7 +120,7 @@ async function handleEnter(q) {
 // ---------------------------------------------------------------------------
 els.locateBtn.addEventListener('click', () => {
   if (!navigator.geolocation) {
-    loadLocation({ label: 'Your location', latitude: undefined, longitude: undefined }, { forceFallback: true });
+    loadLocation({ label: t('place.yourLocation'), latitude: undefined, longitude: undefined }, { forceFallback: true });
     return;
   }
   els.locateBtn.classList.add('busy');
@@ -126,28 +128,33 @@ els.locateBtn.addEventListener('click', () => {
     (pos) => {
       els.locateBtn.classList.remove('busy');
       loadLocation({
-        label: 'Your location',
+        label: t('place.yourLocation'),
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
       });
     },
     () => {
       els.locateBtn.classList.remove('busy');
-      showError('Could not get your location. Try searching for a city instead.');
+      showError(t('error.locate'));
     },
     { timeout: 10000 }
   );
 });
 
-els.chips.forEach((chip) => {
-  chip.addEventListener('click', () => {
-    loadLocation({
-      label: chip.dataset.label,
-      latitude: parseFloat(chip.dataset.lat),
-      longitude: parseFloat(chip.dataset.lon),
+// Build the localized example chips for the current language.
+function buildChips() {
+  els.chips.innerHTML = '';
+  localizedCities().forEach((c) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.type = 'button';
+    chip.textContent = c.short;
+    chip.addEventListener('click', () => {
+      loadLocation({ label: c.full, latitude: c.lat, longitude: c.lon });
     });
+    els.chips.appendChild(chip);
   });
-});
+}
 
 els.errorRetry.addEventListener('click', () => {
   els.error.hidden = true;
@@ -171,10 +178,10 @@ async function loadLocation(place, opts = {}) {
 
   try {
     const stats = computeStats(series);
-    current = { series, stats };
-    paint(series, stats, usedFallback || series.source === 'sample');
+    current = { series, stats, isSample: usedFallback || series.source === 'sample' };
+    paint(series, stats, current.isSample);
   } catch {
-    showError('Something went wrong building the chart. Please try another location.');
+    showError(t('error.generic'));
   }
 }
 
@@ -182,19 +189,24 @@ function paint(series, stats, isSample) {
   els.placeName.textContent = series.label;
   els.sampleNote.hidden = !isSample;
 
-  renderStripes(els.stripes, series, stats);
+  renderStripes(els.stripes, series, stats, t);
   renderVerdict(
     { root: els.verdictRoot, arrow: els.verdictArrow, number: els.verdictNumber, caption: els.verdictCaption },
-    stats
+    stats,
+    t
   );
   renderTrendChart(els.trendCanvas, series, stats);
   renderHotDays(els.hotdays, stats);
 
   const perDec = stats.trendPerDecade;
-  els.trendCaption.textContent =
-    `${perDec >= 0 ? '+' : '−'}${Math.abs(perDec).toFixed(2)}°C per decade`;
-  els.hotCaption.textContent =
-    `Days at or above 30°C — ${stats.earlyYears[0]}–${stats.earlyYears[1]} vs ${stats.recentYears[0]}–${stats.recentYears[1]}`;
+  const perDecStr = `${perDec >= 0 ? '+' : '−'}${Math.abs(perDec).toFixed(2)}`;
+  els.trendCaption.textContent = t('trend.perDecade', { v: perDecStr });
+  els.hotCaption.textContent = t('hot.caption', {
+    a: stats.earlyYears[0],
+    b: stats.earlyYears[1],
+    c: stats.recentYears[0],
+    d: stats.recentYears[1],
+  });
   els.hottest.textContent = `${stats.hottest.year}`;
   els.baseline.textContent = `${stats.baseline.toFixed(1)}°C`;
 
@@ -228,3 +240,32 @@ window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => renderTrendChart(els.trendCanvas, current.series, current.stats), 150);
 });
+
+// ---------------------------------------------------------------------------
+// Language: build switcher, auto-detect/apply, re-render on change
+// ---------------------------------------------------------------------------
+function buildLangSwitcher() {
+  els.langSelect.innerHTML = '';
+  SUPPORTED.forEach((l) => {
+    const opt = document.createElement('option');
+    opt.value = l.code;
+    opt.textContent = l.name;
+    els.langSelect.appendChild(opt);
+  });
+  els.langSelect.value = getLang();
+  els.langSelect.addEventListener('change', () => {
+    setLang(els.langSelect.value);
+    applyStatic();
+    buildChips();
+    // Re-render the current result so dynamic captions/tooltips re-translate.
+    if (current) paint(current.series, current.stats, current.isSample);
+  });
+}
+
+function init() {
+  buildLangSwitcher();
+  applyStatic(); // auto-detected language on first load
+  buildChips();
+}
+
+init();

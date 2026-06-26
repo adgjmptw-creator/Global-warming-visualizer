@@ -43,6 +43,42 @@ a {
   color: #8ab4f8;
 }
 
+/* ===== Language switcher ===== */
+.lang-bar {
+  position: absolute;
+  top: 0.75rem;
+  inset-inline-end: 0.9rem;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(27, 33, 46, 0.7);
+  border: 1px solid #2c3447;
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem 0.25rem 0.6rem;
+  backdrop-filter: blur(6px);
+}
+
+.lang-globe {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+#lang-select {
+  background: transparent;
+  color: var(--ink);
+  border: none;
+  font-size: 0.88rem;
+  padding: 0.15rem 0.1rem;
+  cursor: pointer;
+  outline: none;
+  max-width: 9rem;
+}
+
+#lang-select option {
+  color: #111;
+}
+
 /* ===== Hero ===== */
 .hero {
   position: relative;

@@ -14,10 +14,10 @@ const HOT_DAY_THRESHOLD = 30; // °C — a "scorching" day (daily max)
 // ---------------------------------------------------------------------------
 // Geocoding: place name -> candidate locations
 // ---------------------------------------------------------------------------
-export async function geocode(query) {
+export async function geocode(query, lang = 'en') {
   const q = (query || '').trim();
   if (!q) return [];
-  const url = `${GEOCODE_URL}?name=${encodeURIComponent(q)}&count=5&language=en&format=json`;
+  const url = `${GEOCODE_URL}?name=${encodeURIComponent(q)}&count=5&language=${encodeURIComponent(lang)}&format=json`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Geocoding failed (${res.status})`);
   const data = await res.json();

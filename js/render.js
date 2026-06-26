@@ -38,7 +38,7 @@ export function stripeColor(anomaly, absMax) {
 }
 
 // --- Warming stripes -------------------------------------------------------
-export function renderStripes(container, series, stats) {
+export function renderStripes(container, series, stats, t) {
   container.innerHTML = '';
   const track = document.createElement('div');
   track.className = 'stripes-track';
@@ -55,7 +55,7 @@ export function renderStripes(container, series, stats) {
     stripe.style.setProperty('--stripe-color', stripeColor(anom, stats.absMaxAnom));
     stripe.tabIndex = 0;
     const sign = anom >= 0 ? '+' : '';
-    const label = `${year}: ${series.yearlyMean[i].toFixed(1)}°C (${sign}${anom.toFixed(1)}° vs baseline)`;
+    const label = `${year}: ${series.yearlyMean[i].toFixed(1)}°C (${sign}${anom.toFixed(1)}° ${t('tooltip.vsBaseline')})`;
     stripe.setAttribute('aria-label', label);
 
     const show = () => {
@@ -87,7 +87,7 @@ export function renderStripes(container, series, stats) {
 }
 
 // --- Big verdict number ----------------------------------------------------
-export function renderVerdict(els, stats) {
+export function renderVerdict(els, stats, t) {
   const warmer = stats.delta >= 0;
   const arrow = warmer ? '▲' : '▼';
   const sign = warmer ? '+' : '−';
@@ -99,8 +99,12 @@ export function renderVerdict(els, stats) {
     '--verdict-color',
     warmer ? stripeColor(stats.absMaxAnom, stats.absMaxAnom) : stripeColor(-stats.absMaxAnom, stats.absMaxAnom)
   );
-  els.caption.textContent =
-    `${stats.earlyYears[0]}–${stats.earlyYears[1]} vs ${stats.recentYears[0]}–${stats.recentYears[1]} average`;
+  els.caption.textContent = t('verdict.caption', {
+    a: stats.earlyYears[0],
+    b: stats.earlyYears[1],
+    c: stats.recentYears[0],
+    d: stats.recentYears[1],
+  });
 }
 
 // --- Trend chart (canvas) --------------------------------------------------

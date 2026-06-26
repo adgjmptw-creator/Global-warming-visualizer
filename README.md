@@ -19,6 +19,18 @@ your own place, your own warming stripes, your own number.
 4. **Scorching days** — days at or above 30 °C, then vs now — a tangible, everyday measure.
 5. **Highlights** — hottest year on record and the 1951–1980 baseline.
 
+## Languages
+
+The UI is available in 11 languages (chosen for broad global reach): English,
+中文 (Chinese), हिन्दी (Hindi), Español, العربية (Arabic, right-to-left),
+Français, Português, Русский, Bahasa Indonesia, বাংলা (Bengali), and 日本語
+(Japanese). The initial language is **auto-detected from the browser** and can be
+changed with the 🌐 switcher (top corner); the choice is remembered. Place-name
+search results are localized too (Open-Meteo geocoding `language` parameter).
+
+All strings live in `js/i18n.js`. To add a language, append an entry to
+`SUPPORTED`, add a matching block to `STRINGS` (and city names to `CITY_NAMES`).
+
 ## How it works
 
 - **Pure static site** — plain HTML/CSS/vanilla JS, no build step, no framework, no backend.

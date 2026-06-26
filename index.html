@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Is It Getting Hotter Here? — Local Warming Visualizer</title>
+    <meta
+      name="description"
+      content="Pick your town and see — at a glance — whether it has been getting hotter over the decades. Local global warming, made personal."
+    />
+    <meta property="og:title" content="Is It Getting Hotter Here?" />
+    <meta
+      property="og:description"
+      content="See your own town's warming story in a single glance."
+    />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='2' height='16' x='0' fill='%232166ac'/%3E%3Crect width='2' height='16' x='3' fill='%2392c5de'/%3E%3Crect width='2' height='16' x='6' fill='%23fddbc7'/%3E%3Crect width='2' height='16' x='9' fill='%23d6604d'/%3E%3Crect width='2' height='16' x='12' fill='%2367001f'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <!-- ===== Hero / search ===== -->
+    <header class="hero">
+      <div class="hero-stripes" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <h1 class="hero-title">Is it getting hotter <em>here?</em></h1>
+        <p class="hero-sub">Pick your place. See your climate's story in one glance.</p>
+
+        <div class="search">
+          <div class="search-box">
+            <span class="search-icon" aria-hidden="true">🔍</span>
+            <input
+              id="search-input"
+              type="text"
+              autocomplete="off"
+              placeholder="Search any town or city…"
+              aria-label="Search for a town or city"
+            />
+            <button id="locate-btn" type="button" title="Use my location" aria-label="Use my location">
+              <span class="pin" aria-hidden="true">📍</span>
+            </button>
+          </div>
+          <ul id="search-suggestions" class="suggestions" role="listbox" aria-label="Suggestions"></ul>
+        </div>
+
+        <div class="chips" aria-label="Example places">
+          <button class="chip" data-label="Tokyo, Japan" data-lat="35.6895" data-lon="139.6917">Tokyo</button>
+          <button class="chip" data-label="London, United Kingdom" data-lat="51.5074" data-lon="-0.1278">London</button>
+          <button class="chip" data-label="New York, United States" data-lat="40.7128" data-lon="-74.006">New York</button>
+          <button class="chip" data-label="Sydney, Australia" data-lat="-33.8688" data-lon="151.2093">Sydney</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== Loading / error overlays ===== -->
+    <div id="loading" class="overlay" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Reading the last 70 years of temperatures…</p>
+    </div>
+
+    <div id="error" class="overlay error" hidden>
+      <p id="error-message"></p>
+      <button id="error-retry" type="button" class="btn">Try again</button>
+    </div>
+
+    <!-- ===== Results ===== -->
+    <main id="results" class="results" hidden>
+      <div class="place-head">
+        <h2 id="place-name"></h2>
+        <p id="sample-note" class="sample-note" hidden>
+          ⚠ Showing sample data (couldn't reach the live archive).
+        </p>
+      </div>
+
+      <!-- 1. Hero warming stripes -->
+      <section class="panel stripes-panel" aria-labelledby="stripes-h">
+        <h3 id="stripes-h" class="panel-title">Every year, coolest&nbsp;→&nbsp;hottest</h3>
+        <div id="stripes" class="stripes" role="img" aria-label="Warming stripes: each bar is one year, blue is cooler and red is hotter."></div>
+      </section>
+
+      <!-- 2. Big verdict -->
+      <section class="panel verdict-panel">
+        <div id="verdict" class="verdict">
+          <span id="verdict-arrow" class="verdict-arrow" aria-hidden="true"></span>
+          <span id="verdict-number" class="verdict-number"></span>
+        </div>
+        <p id="verdict-caption" class="verdict-caption"></p>
+      </section>
+
+      <div class="grid">
+        <!-- 3. Trend chart -->
+        <section class="panel chart-panel" aria-labelledby="trend-h">
+          <h3 id="trend-h" class="panel-title">Yearly average temperature</h3>
+          <canvas id="trend-chart" class="trend-chart" height="280" role="img"
+            aria-label="Line chart of yearly average temperature with a trend line."></canvas>
+          <p id="trend-caption" class="caption"></p>
+        </section>
+
+        <!-- 4. Scorching days -->
+        <section class="panel hot-panel" aria-labelledby="hot-h">
+          <h3 id="hot-h" class="panel-title">Scorching days</h3>
+          <div id="hotdays" class="hotdays"></div>
+          <p id="hot-caption" class="caption"></p>
+        </section>
+      </div>
+
+      <!-- 5. Highlights -->
+      <section class="panel highlights">
+        <div class="highlight">
+          <span class="highlight-label">Hottest year on record</span>
+          <span id="highlight-hottest" class="highlight-value hot"></span>
+        </div>
+        <div class="highlight">
+          <span class="highlight-label">1951–1980 baseline</span>
+          <span id="highlight-baseline" class="highlight-value"></span>
+        </div>
+      </section>
+
+      <footer class="results-footer">
+        Data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>
+        ERA5 reanalysis · Colors after Ed Hawkins' #ShowYourStripes ·
+        Baseline period 1951–1980.
+      </footer>
+    </main>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

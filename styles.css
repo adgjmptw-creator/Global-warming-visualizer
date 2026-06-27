@@ -408,6 +408,63 @@ a {
   font-size: 0.8rem;
 }
 
+/* ===== Explainer (progressive disclosure) ===== */
+.explainer {
+  margin-top: 0.85rem;
+}
+
+.explainer summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  list-style: none;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.explainer summary::-webkit-details-marker {
+  display: none;
+}
+
+.explainer summary::before {
+  content: 'ⓘ';
+  font-size: 0.95rem;
+}
+
+.explainer summary::after {
+  content: '⌄';
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+
+.explainer[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.explainer summary:hover,
+.explainer[open] summary {
+  color: var(--ink-dim);
+}
+
+.explainer p {
+  margin: 0.7rem 0 0;
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  max-width: 62ch;
+  animation: fadein 0.25s ease;
+}
+
+@keyframes fadein {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
 /* ===== Verdict ===== */
 .verdict-panel {
   text-align: center;
@@ -454,6 +511,9 @@ a {
   width: 100%;
   height: 280px;
   display: block;
+  cursor: crosshair;
+  /* let vertical page scroll through, but capture horizontal drags for scrubbing */
+  touch-action: pan-y;
 }
 
 /* ===== Scorching days ===== */

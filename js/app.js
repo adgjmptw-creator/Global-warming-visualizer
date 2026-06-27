@@ -120,7 +120,7 @@ async function handleEnter(q) {
 // ---------------------------------------------------------------------------
 els.locateBtn.addEventListener('click', () => {
   if (!navigator.geolocation) {
-    loadLocation({ label: t('place.yourLocation'), latitude: undefined, longitude: undefined }, { forceFallback: true });
+    loadLocation({ label: t('place.yourLocation'), isYourLocation: true, latitude: undefined, longitude: undefined }, { forceFallback: true });
     return;
   }
   els.locateBtn.classList.add('busy');
@@ -129,6 +129,7 @@ els.locateBtn.addEventListener('click', () => {
       els.locateBtn.classList.remove('busy');
       loadLocation({
         label: t('place.yourLocation'),
+        isYourLocation: true,
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
       });
@@ -150,7 +151,7 @@ function buildChips() {
     chip.type = 'button';
     chip.textContent = c.short;
     chip.addEventListener('click', () => {
-      loadLocation({ label: c.full, latitude: c.lat, longitude: c.lon });
+      loadLocation({ label: c.full, cityId: c.id, latitude: c.lat, longitude: c.lon });
     });
     els.chips.appendChild(chip);
   });
@@ -178,7 +179,7 @@ async function loadLocation(place, opts = {}) {
 
   try {
     const stats = computeStats(series);
-    current = { series, stats, isSample: usedFallback || series.source === 'sample' };
+    current = { series, stats, place, isSample: usedFallback || series.source === 'sample' };
     paint(series, stats, current.isSample);
   } catch {
     showError(t('error.generic'));
@@ -188,6 +189,11 @@ async function loadLocation(place, opts = {}) {
 function paint(series, stats, isSample) {
   els.placeName.textContent = series.label;
   els.sampleNote.hidden = !isSample;
+
+  // Reveal first so the canvas has its real layout width before we draw/scale it.
+  hideOverlays();
+  els.results.hidden = false;
+  els.body.classList.add('has-results');
 
   renderStripes(els.stripes, series, stats, t);
   renderVerdict(
@@ -210,9 +216,6 @@ function paint(series, stats, isSample) {
   els.hottest.textContent = `${stats.hottest.year}`;
   els.baseline.textContent = `${stats.baseline.toFixed(1)}°C`;
 
-  hideOverlays();
-  els.results.hidden = false;
-  els.body.classList.add('has-results');
   els.results.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -258,8 +261,23 @@ function buildLangSwitcher() {
     applyStatic();
     buildChips();
     // Re-render the current result so dynamic captions/tooltips re-translate.
-    if (current) paint(current.series, current.stats, current.isSample);
+    if (current) {
+      relabelCurrent();
+      paint(current.series, current.stats, current.isSample);
+    }
   });
+}
+
+// Re-localize the result heading when the language changes (for places we can
+// map back to a known name: example cities and "your location").
+function relabelCurrent() {
+  const p = current.place || {};
+  if (p.cityId) {
+    const c = localizedCities().find((x) => x.id === p.cityId);
+    if (c) current.series.label = c.full;
+  } else if (p.isYourLocation) {
+    current.series.label = t('place.yourLocation');
+  }
 }
 
 function init() {

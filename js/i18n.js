@@ -366,6 +366,67 @@ const CITY_NAMES = {
   bn: { tokyo: ['টোকিও', 'টোকিও, জাপান'], london: ['লন্ডন', 'লন্ডন, যুক্তরাজ্য'], newyork: ['নিউ ইয়র্ক', 'নিউ ইয়র্ক, যুক্তরাষ্ট্র'], sydney: ['সিডনি', 'সিডনি, অস্ট্রেলিয়া'] },
 };
 
+// Warming-stripes explainer (progressive disclosure). Merged into STRINGS below
+// so we don't have to thread two extra keys through every language block.
+const STRIPES_EXPLAIN = {
+  en: {
+    'stripes.whatsThis': 'What do these colors mean?',
+    'stripes.explain':
+      "Each stripe is one year — oldest on the left, newest on the right. Its color shows that year's average temperature compared with the local 1951–1980 average: blue is cooler, white is about average, red is hotter. When the stripes shift from blue to red, your area has been warming.",
+  },
+  ja: {
+    'stripes.whatsThis': 'この色は何を表しているの？',
+    'stripes.explain':
+      '各ストライプは1年を表し、左が古い年、右が新しい年です。色は、その年の平均気温を1951〜1980年の地元の平均と比べたもので、青は涼しい、白はほぼ平均、赤は暑いことを示します。青から赤へ変わっていれば、その地域が温暖化しているということです。',
+  },
+  zh: {
+    'stripes.whatsThis': '这些颜色代表什么？',
+    'stripes.explain':
+      '每条代表一年，左侧最早，右侧最新。颜色表示该年的平均气温与当地1951–1980年平均值的对比：蓝色更冷，白色接近平均，红色更热。当条纹由蓝转红，说明你所在地区正在变暖。',
+  },
+  hi: {
+    'stripes.whatsThis': 'ये रंग क्या दर्शाते हैं?',
+    'stripes.explain':
+      'हर पट्टी एक साल है — बाईं ओर सबसे पुराना, दाईं ओर सबसे नया। रंग उस साल के औसत तापमान की तुलना स्थानीय 1951–1980 औसत से दिखाता है: नीला ठंडा, सफ़ेद लगभग औसत, और लाल अधिक गर्म। जब पट्टियाँ नीले से लाल होती जाती हैं, तो इसका मतलब है कि आपका क्षेत्र गर्म हो रहा है।',
+  },
+  es: {
+    'stripes.whatsThis': '¿Qué significan estos colores?',
+    'stripes.explain':
+      'Cada franja es un año: la más antigua a la izquierda y la más reciente a la derecha. El color muestra la temperatura media de ese año frente al promedio local de 1951–1980: azul más frío, blanco cerca del promedio y rojo más cálido. Cuando las franjas pasan de azul a rojo, tu zona se ha ido calentando.',
+  },
+  ar: {
+    'stripes.whatsThis': 'ماذا تعني هذه الألوان؟',
+    'stripes.explain':
+      'كل شريط يمثل سنة — الأقدم على اليسار والأحدث على اليمين. يوضّح اللون متوسط حرارة تلك السنة مقارنةً بمتوسط الفترة 1951–1980 محليًا: الأزرق أبرد، والأبيض قريب من المتوسط، والأحمر أحرّ. وعندما تتحوّل الخطوط من الأزرق إلى الأحمر، فهذا يعني أن منطقتك تزداد احترارًا.',
+  },
+  fr: {
+    'stripes.whatsThis': 'Que signifient ces couleurs ?',
+    'stripes.explain':
+      "Chaque bande représente une année — la plus ancienne à gauche, la plus récente à droite. La couleur indique la température moyenne de l'année par rapport à la moyenne locale de 1951–1980 : bleu plus frais, blanc proche de la moyenne, rouge plus chaud. Quand les bandes passent du bleu au rouge, votre région s'est réchauffée.",
+  },
+  pt: {
+    'stripes.whatsThis': 'O que significam estas cores?',
+    'stripes.explain':
+      'Cada faixa é um ano — a mais antiga à esquerda e a mais recente à direita. A cor mostra a temperatura média desse ano em relação à média local de 1951–1980: azul mais frio, branco perto da média e vermelho mais quente. Quando as faixas passam de azul para vermelho, a sua região tem vindo a aquecer.',
+  },
+  ru: {
+    'stripes.whatsThis': 'Что означают эти цвета?',
+    'stripes.explain':
+      'Каждая полоса — это год: слева самые ранние, справа самые поздние. Цвет показывает среднюю температуру года относительно местного среднего за 1951–1980 годы: синий холоднее, белый около среднего, красный жарче. Когда полосы меняются с синих на красные, ваш регион теплеет.',
+  },
+  id: {
+    'stripes.whatsThis': 'Apa arti warna-warna ini?',
+    'stripes.explain':
+      'Setiap garis adalah satu tahun — tertua di kiri, terbaru di kanan. Warnanya menunjukkan suhu rata-rata tahun itu dibandingkan rata-rata lokal 1951–1980: biru lebih dingin, putih sekitar rata-rata, merah lebih panas. Saat garis berubah dari biru ke merah, berarti daerahmu makin menghangat.',
+  },
+  bn: {
+    'stripes.whatsThis': 'এই রংগুলো কী বোঝায়?',
+    'stripes.explain':
+      'প্রতিটি স্ট্রাইপ এক বছর — বাঁয়ে সবচেয়ে পুরোনো, ডানে সবচেয়ে নতুন। রং দেখায় ওই বছরের গড় তাপমাত্রা স্থানীয় ১৯৫১–১৯৮০ গড়ের তুলনায়: নীল শীতল, সাদা প্রায় গড়, লাল বেশি উষ্ণ। স্ট্রাইপ নীল থেকে লাল হতে থাকলে বুঝবেন আপনার এলাকা উষ্ণ হচ্ছে।',
+  },
+};
+for (const code in STRIPES_EXPLAIN) Object.assign(STRINGS[code], STRIPES_EXPLAIN[code]);
+
 const GLOBAL_PARAMS = { link: LINK };
 
 let _lang = null;

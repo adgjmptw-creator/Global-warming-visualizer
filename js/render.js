@@ -108,6 +108,8 @@ export function renderVerdict(els, stats, t) {
 }
 
 // --- Trend chart (canvas) --------------------------------------------------
+// Draws the chart and wires pointer/touch "scrubbing": move across the chart to
+// read the exact year + temperature, like a stock-price chart.
 export function renderTrendChart(canvas, series, stats) {
   const dpr = window.devicePixelRatio || 1;
   const cssW = canvas.clientWidth || 600;
@@ -116,7 +118,6 @@ export function renderTrendChart(canvas, series, stats) {
   canvas.height = Math.round(cssH * dpr);
   const ctx = canvas.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, cssW, cssH);
 
   const pad = { l: 44, r: 16, t: 16, b: 28 };
   const w = cssW - pad.l - pad.r;
@@ -139,63 +140,122 @@ export function renderTrendChart(canvas, series, stats) {
   const grid = styles.getPropertyValue('--chart-grid').trim() || '#e2e6ee';
   const ink = styles.getPropertyValue('--chart-ink').trim() || '#9aa3b2';
   const lineCol = styles.getPropertyValue('--chart-line').trim() || '#5b6472';
+  const accent = stats.trendPerDecade >= 0 ? '#d6604d' : '#2166ac';
 
-  // Horizontal gridlines + temperature labels.
-  ctx.font = '11px system-ui, sans-serif';
-  ctx.textBaseline = 'middle';
-  const ticks = 4;
-  for (let i = 0; i <= ticks; i++) {
-    const t = yMin + ((yMax - yMin) * i) / ticks;
-    const y = Y(t);
-    ctx.strokeStyle = grid;
-    ctx.lineWidth = 1;
+  // Redraw everything; `active` (data index or null) adds the scrub crosshair.
+  function draw(active) {
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    // Horizontal gridlines + temperature labels.
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+    const ticks = 4;
+    for (let i = 0; i <= ticks; i++) {
+      const t = yMin + ((yMax - yMin) * i) / ticks;
+      const y = Y(t);
+      ctx.strokeStyle = grid;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(pad.l + w, y);
+      ctx.stroke();
+      ctx.fillStyle = ink;
+      ctx.textAlign = 'right';
+      ctx.fillText(`${t.toFixed(1)}°`, pad.l - 8, y);
+    }
+
+    // X labels: first & last year.
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(String(xMin), X(xMin), pad.t + h + 8);
+    ctx.fillText(String(xMax), X(xMax), pad.t + h + 8);
+
+    // Yearly line.
+    ctx.strokeStyle = lineCol;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(pad.l, y);
-    ctx.lineTo(pad.l + w, y);
+    xs.forEach((yr, i) => {
+      const px = X(yr);
+      const py = Y(ys[i]);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
     ctx.stroke();
-    ctx.fillStyle = ink;
-    ctx.textAlign = 'right';
-    ctx.fillText(`${t.toFixed(1)}°`, pad.l - 8, y);
-  }
 
-  // X labels: first & last year.
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillText(String(xMin), X(xMin), pad.t + h + 8);
-  ctx.fillText(String(xMax), X(xMax), pad.t + h + 8);
-
-  // Yearly line.
-  ctx.strokeStyle = lineCol;
-  ctx.lineWidth = 1.5;
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  xs.forEach((yr, i) => {
-    const px = X(yr);
-    const py = Y(ys[i]);
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  });
-  ctx.stroke();
-
-  // Trend line (least squares) drawn bold in the warming color.
-  const { slope, intercept } = stats.trendLine;
-  const ty0 = slope * xMin + intercept;
-  const ty1 = slope * xMax + intercept;
-  ctx.strokeStyle = stats.trendPerDecade >= 0 ? '#d6604d' : '#2166ac';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(X(xMin), Y(ty0));
-  ctx.lineTo(X(xMax), Y(ty1));
-  ctx.stroke();
-
-  // Hottest-year marker.
-  const hi = series.years.indexOf(stats.hottest.year);
-  if (hi >= 0) {
-    ctx.fillStyle = '#67001f';
+    // Trend line (least squares) drawn bold in the warming color.
+    const { slope, intercept } = stats.trendLine;
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(X(stats.hottest.year), Y(series.yearlyMean[hi]), 4, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(X(xMin), Y(slope * xMin + intercept));
+    ctx.lineTo(X(xMax), Y(slope * xMax + intercept));
+    ctx.stroke();
+
+    // Hottest-year marker.
+    const hi = xs.indexOf(stats.hottest.year);
+    if (hi >= 0) {
+      ctx.fillStyle = '#67001f';
+      ctx.beginPath();
+      ctx.arc(X(stats.hottest.year), Y(ys[hi]), 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Scrub crosshair + value readout.
+    if (active != null) {
+      const px = X(xs[active]);
+      const py = Y(ys[active]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, pad.t);
+      ctx.lineTo(px, pad.t + h);
+      ctx.stroke();
+
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const label = `${xs[active]} · ${ys[active].toFixed(1)}°C`;
+      ctx.font = '600 12px system-ui, sans-serif';
+      const tw = ctx.measureText(label).width;
+      const bw = tw + 16;
+      const bh = 22;
+      let bx = px - bw / 2;
+      bx = Math.max(pad.l, Math.min(bx, pad.l + w - bw));
+      const by = pad.t + 2;
+      ctx.fillStyle = 'rgba(0,0,0,0.82)';
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, bh, 6);
+        ctx.fill();
+      } else {
+        ctx.fillRect(bx, by, bw, bh);
+      }
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, bx + bw / 2, by + bh / 2);
+    }
   }
+
+  draw(null);
+
+  // Map a pointer x-position to the nearest year and redraw with the readout.
+  const indexAt = (clientX) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const idx = Math.round(((mx - pad.l) / (w || 1)) * (xMax - xMin));
+    return clamp(idx, 0, xs.length - 1);
+  };
+  // Assigned (not added) so re-renders replace handlers instead of stacking them.
+  canvas.onpointermove = (e) => draw(indexAt(e.clientX));
+  canvas.onpointerdown = (e) => draw(indexAt(e.clientX));
+  canvas.onpointerleave = () => draw(null);
 }
 
 // --- Scorching-days panel --------------------------------------------------

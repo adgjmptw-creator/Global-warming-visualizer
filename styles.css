@@ -603,6 +603,35 @@ a {
   color: var(--accent);
 }
 
+.share-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--panel-2);
+  border: 1px solid #2c3447;
+  font-weight: 600;
+}
+
+.share-btn::before {
+  content: '📤';
+}
+
+.share-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.share-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .results-footer {
   text-align: center;
   color: var(--ink-faint);

@@ -19,6 +19,11 @@ your own place, your own warming stripes, your own number.
 4. **Scorching days** — days at or above 30 °C, then vs now — a tangible, everyday measure.
 5. **Highlights** — hottest year on record and the 1951–1980 baseline.
 
+You can also **scrub the trend chart** (hover or drag) to read any year's exact
+temperature, open an optional explainer of what the stripes mean, and **save or
+share** the result as an image card (uses the OS share sheet where available,
+otherwise downloads a PNG).
+
 ## Languages
 
 The UI is available in 11 languages (chosen for broad global reach): English,

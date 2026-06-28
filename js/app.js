@@ -4,6 +4,7 @@
 import { geocode, fetchClimate, fallbackClimate, computeStats } from './climate.js';
 import { renderStripes, renderVerdict, renderTrendChart, renderHotDays } from './render.js';
 import { SUPPORTED, getLang, setLang, t, applyStatic, localizedCities } from './i18n.js';
+import { shareResult } from './share.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -31,7 +32,18 @@ const els = {
   hotCaption: $('#hot-caption'),
   hottest: $('#highlight-hottest'),
   baseline: $('#highlight-baseline'),
+  shareBtn: $('#share-btn'),
 };
+
+els.shareBtn.addEventListener('click', async () => {
+  if (!current) return;
+  els.shareBtn.disabled = true;
+  try {
+    await shareResult(current.series, current.stats, t);
+  } finally {
+    els.shareBtn.disabled = false;
+  }
+});
 
 let current = null; // { series, stats } — kept for resize redraws
 

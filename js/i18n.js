@@ -427,6 +427,22 @@ const STRIPES_EXPLAIN = {
 };
 for (const code in STRIPES_EXPLAIN) Object.assign(STRINGS[code], STRIPES_EXPLAIN[code]);
 
+// Save/share strings (merged in the same way).
+const SHARE_STRINGS = {
+  en: { 'share.button': 'Save / Share image', 'share.text': 'Is it getting hotter where you live? See your local warming story.' },
+  ja: { 'share.button': '画像を保存・シェア', 'share.text': 'あなたの街は暑くなってる？ 身近な温暖化を見てみよう。' },
+  zh: { 'share.button': '保存 / 分享图片', 'share.text': '你住的地方变热了吗？看看身边的变暖故事。' },
+  hi: { 'share.button': 'छवि सहेजें / साझा करें', 'share.text': 'क्या आपकी जगह गर्म हो रही है? अपने यहाँ की वार्मिंग देखें।' },
+  es: { 'share.button': 'Guardar / Compartir imagen', 'share.text': '¿Hace más calor donde vives? Mira tu historia local de calentamiento.' },
+  ar: { 'share.button': 'حفظ / مشاركة الصورة', 'share.text': 'هل تزداد الحرارة حيث تعيش؟ شاهد قصة الاحترار في منطقتك.' },
+  fr: { 'share.button': "Enregistrer / Partager l'image", 'share.text': "Fait-il plus chaud chez vous ? Découvrez l'évolution de votre climat." },
+  pt: { 'share.button': 'Guardar / Partilhar imagem', 'share.text': 'Está a ficar mais quente onde vive? Veja a sua história de aquecimento.' },
+  ru: { 'share.button': 'Сохранить / Поделиться', 'share.text': 'У вас становится жарче? Посмотрите историю потепления в вашем регионе.' },
+  id: { 'share.button': 'Simpan / Bagikan gambar', 'share.text': 'Apakah makin panas di tempatmu? Lihat kisah pemanasan lokalmu.' },
+  bn: { 'share.button': 'ছবি সংরক্ষণ / শেয়ার করুন', 'share.text': 'আপনার এলাকা কি গরম হচ্ছে? স্থানীয় উষ্ণায়নের গল্প দেখুন।' },
+};
+for (const code in SHARE_STRINGS) Object.assign(STRINGS[code], SHARE_STRINGS[code]);
+
 const GLOBAL_PARAMS = { link: LINK };
 
 let _lang = null;

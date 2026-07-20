@@ -232,7 +232,8 @@ a {
 }
 
 .suggestion:hover,
-.suggestion:focus {
+.suggestion:focus,
+.suggestion.active {
   background: var(--panel-2);
   outline: none;
 }
@@ -331,6 +332,15 @@ a {
   padding: 1.25rem;
   margin-bottom: 1.25rem;
   box-shadow: var(--shadow);
+  /* revealed on scroll (JS adds .in-view via IntersectionObserver) */
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.panel.in-view {
+  opacity: 1;
+  transform: none;
 }
 
 .panel-title {
@@ -358,6 +368,9 @@ a {
   height: 150px;
   border-radius: 8px;
   overflow: hidden;
+  cursor: crosshair;
+  /* keep vertical page scroll; horizontal drags scrub through the years */
+  touch-action: pan-y;
 }
 
 .stripe {
@@ -375,7 +388,7 @@ a {
   opacity: 1;
 }
 
-.stripe:hover,
+.stripe.active,
 .stripe:focus {
   outline: 2px solid #fff;
   outline-offset: -2px;
@@ -488,6 +501,8 @@ a {
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1;
+  /* stable digit widths while the number counts up */
+  font-variant-numeric: tabular-nums;
 }
 
 .verdict-caption {
@@ -666,5 +681,9 @@ a {
   }
   .hotdays .hotday-fill {
     width: var(--target);
+  }
+  .panel {
+    opacity: 1;
+    transform: none;
   }
 }

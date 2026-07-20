@@ -47,31 +47,53 @@ export function renderStripes(container, series, stats, t) {
   tooltip.className = 'stripe-tooltip';
   tooltip.setAttribute('role', 'status');
 
-  series.years.forEach((year, i) => {
+  const labelFor = (i) => {
     const anom = stats.anomalies[i];
+    const sign = anom >= 0 ? '+' : '';
+    return `${series.years[i]}: ${series.yearlyMean[i].toFixed(1)}°C (${sign}${anom.toFixed(1)}° ${t('tooltip.vsBaseline')})`;
+  };
+
+  const stripes = [];
+  series.years.forEach((year, i) => {
     const stripe = document.createElement('div');
     stripe.className = 'stripe';
     stripe.style.setProperty('--i', i);
-    stripe.style.setProperty('--stripe-color', stripeColor(anom, stats.absMaxAnom));
+    stripe.style.setProperty('--stripe-color', stripeColor(stats.anomalies[i], stats.absMaxAnom));
     stripe.tabIndex = 0;
-    const sign = anom >= 0 ? '+' : '';
-    const label = `${year}: ${series.yearlyMean[i].toFixed(1)}°C (${sign}${anom.toFixed(1)}° ${t('tooltip.vsBaseline')})`;
-    stripe.setAttribute('aria-label', label);
-
-    const show = () => {
-      tooltip.textContent = label;
-      tooltip.classList.add('visible');
-      const cRect = container.getBoundingClientRect();
-      const sRect = stripe.getBoundingClientRect();
-      const x = sRect.left - cRect.left + sRect.width / 2;
-      tooltip.style.left = `${clamp(x, 60, cRect.width - 60)}px`;
-    };
-    stripe.addEventListener('mouseenter', show);
-    stripe.addEventListener('focus', show);
-    stripe.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
-    stripe.addEventListener('blur', () => tooltip.classList.remove('visible'));
+    stripe.setAttribute('aria-label', labelFor(i));
+    stripe.addEventListener('focus', () => setActive(i));
+    stripe.addEventListener('blur', clearActive);
     track.appendChild(stripe);
+    stripes.push(stripe);
   });
+
+  // Scrubbing: drag/hover anywhere on the band to read year after year, like
+  // the chart — much smoother than aiming at individual 6px stripes on touch.
+  let activeIdx = null;
+  function setActive(i) {
+    if (activeIdx === i) return;
+    if (activeIdx != null) stripes[activeIdx].classList.remove('active');
+    activeIdx = i;
+    stripes[i].classList.add('active');
+    tooltip.textContent = labelFor(i);
+    tooltip.classList.add('visible');
+    const cRect = container.getBoundingClientRect();
+    const sRect = stripes[i].getBoundingClientRect();
+    const x = sRect.left - cRect.left + sRect.width / 2;
+    tooltip.style.left = `${clamp(x, 60, cRect.width - 60)}px`;
+  }
+  function clearActive() {
+    if (activeIdx != null) stripes[activeIdx].classList.remove('active');
+    activeIdx = null;
+    tooltip.classList.remove('visible');
+  }
+  const idxFromX = (clientX) => {
+    const r = track.getBoundingClientRect();
+    return clamp(Math.floor(((clientX - r.left) / (r.width || 1)) * stripes.length), 0, stripes.length - 1);
+  };
+  track.onpointermove = (e) => setActive(idxFromX(e.clientX));
+  track.onpointerdown = (e) => setActive(idxFromX(e.clientX));
+  track.onpointerleave = clearActive;
 
   container.appendChild(track);
   container.appendChild(tooltip);
@@ -87,12 +109,35 @@ export function renderStripes(container, series, stats, t) {
 }
 
 // --- Big verdict number ----------------------------------------------------
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export function renderVerdict(els, stats, t) {
   const warmer = stats.delta >= 0;
   const arrow = warmer ? '▲' : '▼';
   const sign = warmer ? '+' : '−';
   els.arrow.textContent = arrow;
-  els.number.textContent = `${sign}${Math.abs(stats.delta).toFixed(1)}°C`;
+
+  // Count the number up from 0 — the climb itself tells the story. Skipped for
+  // reduced-motion and when repainting the same value (e.g. language switch).
+  const final = Math.abs(stats.delta);
+  const finalText = `${sign}${final.toFixed(1)}°C`;
+  cancelAnimationFrame(els.number._raf || 0);
+  if (reducedMotion() || els.number.dataset.final === finalText) {
+    els.number.dataset.final = finalText;
+    els.number.textContent = finalText;
+  } else {
+    els.number.dataset.final = finalText;
+    const dur = 1100;
+    const start = performance.now();
+    const ease = (x) => 1 - Math.pow(1 - x, 3);
+    const tick = (now) => {
+      const p = Math.min(1, (now - start) / dur);
+      els.number.textContent = `${sign}${(final * ease(p)).toFixed(1)}°C`;
+      if (p < 1) els.number._raf = requestAnimationFrame(tick);
+    };
+    els.number._raf = requestAnimationFrame(tick);
+  }
+
   els.root.classList.toggle('warmer', warmer);
   els.root.classList.toggle('cooler', !warmer);
   els.root.style.setProperty(
@@ -252,11 +297,56 @@ export function renderTrendChart(canvas, series, stats) {
     const idx = Math.round(((mx - pad.l) / (w || 1)) * (xMax - xMin));
     return clamp(idx, 0, xs.length - 1);
   };
+
+  // Guards: a token invalidates stale animation frames from earlier renders,
+  // and any user touch takes over from the intro sweep.
+  const token = {};
+  canvas._renderToken = token;
+  let sweeping = false;
+  const stopSweep = () => {
+    sweeping = false;
+  };
+
   // Assigned (not added) so re-renders replace handlers instead of stacking them.
-  canvas.onpointermove = (e) => draw(indexAt(e.clientX));
-  canvas.onpointerdown = (e) => draw(indexAt(e.clientX));
-  canvas.onpointerleave = () => draw(null);
+  canvas.onpointermove = (e) => {
+    stopSweep();
+    draw(indexAt(e.clientX));
+  };
+  canvas.onpointerdown = (e) => {
+    stopSweep();
+    draw(indexAt(e.clientX));
+  };
+  canvas.onpointerleave = () => {
+    stopSweep();
+    draw(null);
+  };
+
+  // First reveal only: sweep the crosshair once across the years, then fade
+  // out — a wordless hint that the chart can be scrubbed.
+  if (!sweptSeries.has(series) && !reducedMotion()) {
+    sweptSeries.add(series);
+    sweeping = true;
+    const dur = 1600;
+    const startT = performance.now();
+    const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+    const step = (now) => {
+      if (!sweeping || canvas._renderToken !== token) return;
+      const p = Math.min(1, (now - startT) / dur);
+      draw(Math.round(ease(p) * (xs.length - 1)));
+      if (p < 1) {
+        requestAnimationFrame(step);
+      } else {
+        setTimeout(() => {
+          if (sweeping && canvas._renderToken === token) draw(null);
+        }, 400);
+      }
+    };
+    requestAnimationFrame(step);
+  }
 }
+
+// Series whose intro sweep has already played (survives language repaints).
+const sweptSeries = new WeakSet();
 
 // --- Scorching-days panel --------------------------------------------------
 export function renderHotDays(container, stats) {

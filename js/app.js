@@ -62,14 +62,27 @@ els.searchInput.addEventListener('input', () => {
 });
 
 els.searchInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
+  const items = [...els.suggestions.querySelectorAll('.suggestion')];
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!items.length) return;
+    e.preventDefault();
+    const dir = e.key === 'ArrowDown' ? 1 : -1;
+    sugIdx = (sugIdx + dir + items.length) % items.length;
+    items.forEach((el, i) => el.classList.toggle('active', i === sugIdx));
+  } else if (e.key === 'Enter') {
     e.preventDefault();
     clearTimeout(debounceTimer);
-    handleEnter(els.searchInput.value.trim());
+    if (sugIdx >= 0 && items[sugIdx]) {
+      items[sugIdx].click();
+    } else {
+      handleEnter(els.searchInput.value.trim());
+    }
   } else if (e.key === 'Escape') {
     clearSuggestions();
   }
 });
+
+let sugIdx = -1;
 
 document.addEventListener('click', (e) => {
   if (!els.suggestions.contains(e.target) && e.target !== els.searchInput) clearSuggestions();
@@ -108,6 +121,7 @@ async function showSuggestions(q) {
 function clearSuggestions() {
   els.suggestions.innerHTML = '';
   els.suggestions.classList.remove('open');
+  sugIdx = -1;
 }
 
 async function handleEnter(q) {
@@ -292,10 +306,32 @@ function relabelCurrent() {
   }
 }
 
+// Panels drift in as they enter the viewport, guiding the eye down the story.
+function setupReveal() {
+  const panels = document.querySelectorAll('.panel');
+  if (!('IntersectionObserver' in window)) {
+    panels.forEach((p) => p.classList.add('in-view'));
+    return;
+  }
+  const io = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) {
+          en.target.classList.add('in-view');
+          io.unobserve(en.target);
+        }
+      });
+    },
+    { threshold: 0.12 }
+  );
+  panels.forEach((p) => io.observe(p));
+}
+
 function init() {
   buildLangSwitcher();
   applyStatic(); // auto-detected language on first load
   buildChips();
+  setupReveal();
 }
 
 init();
